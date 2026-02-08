@@ -1,0 +1,31 @@
+body { 
+            font-family: 'Inter', sans-serif; 
+            font-size: 16px; 
+        }
+        .sidebar {
+            width: 280px; 
+            background-color: #1a1a2e; 
+            color: #d8bfa4; 
+            transition: transform 0.3s ease;
+            flex-shrink: 0; 
+        }
+        .sidebar a {
+            font-size: 1.1rem; 
+        }
+        .sidebar a:hover {
+            background-color: #2a2338; 
+            color: gold;
+        }
+        .text-gold { color: #FFD700; } 
+        .bg-gold { background-color: #FFD700; }
+
+        .stock-table th {
+            font-size: 0.9rem; 
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .stock-table td {
+            font-size: 1rem; 
+            padding-top: 0.8rem;
+            padding-bottom: 0.8rem;
+        }
