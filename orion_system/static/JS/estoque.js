@@ -1,149 +1,5 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Estoque - Orion System</title>
+        document.addEventListener('DOMContentLoaded', () => {
 
-<script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            font-size: 16px; 
-        }
-        .sidebar {
-            width: 280px; 
-            background-color: #1a1a2e; 
-            color: #d8bfa4; 
-            transition: transform 0.3s ease;
-            flex-shrink: 0; 
-        }
-        .sidebar a {
-            font-size: 1.1rem; 
-        }
-        .sidebar a:hover {
-            background-color: #2a2338; 
-            color: gold;
-        }
-        .text-gold { color: #FFD700; } 
-        .bg-gold { background-color: #FFD700; }
-
-        .stock-table th {
-            font-size: 0.9rem; 
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
-        .stock-table td {
-            font-size: 1rem; 
-            padding-top: 0.8rem;
-            padding-bottom: 0.8rem;
-        }
-    </style>
-</head>
-<body class="bg-[#0f0c19] text-[#6a5c7a] flex min-h-screen w-full overflow-auto">
-
-    <aside id="sidebar" class="sidebar p-6 flex flex-col justify-between">
-        <div>
-            <h1 class="text-4xl font-bold text-gold mb-10 text-center">Orion</h1>
-            <nav class="space-y-3">
-                <a href="#" class="flex items-center p-4 rounded-lg transition duration-150 bg-[#2a2338] text-gold shadow-md">
-                    <span class="material-icons mr-3 text-2xl">inventory_2</span>
-                    Estoque
-                </a>
-                <a href="#" class="flex items-center p-4 rounded-lg transition duration-150 hover:bg-[#2a2338] hover:text-white">
-                    <span class="material-icons mr-3 text-2xl">bar_chart</span>
-                    Relatórios
-                </a>
-                <a href="#" class="flex items-center p-4 rounded-lg transition duration-150 hover:bg-[#2a2338] hover:text-white">
-                    <span class="material-icons mr-3 text-2xl">people</span>
-                    Usuários
-                </a>
-            </nav>
-        </div>
-        <div class="mt-8">
-             <div id="user-info" class="text-sm p-3 rounded-lg bg-[#2a2338] text-[#d8bfa4] break-all">
-                ID da Sessão: <span id="user-id" class="font-mono text-xs">A carregar...</span>
-            </div>
-            <button id="logout-button" class="mt-5 w-full flex items-center justify-center p-4 rounded-lg bg-red-800 hover:bg-red-700 text-white font-bold text-lg transition duration-150 shadow-md">
-                <span class="material-icons mr-2 text-2xl">logout</span>
-                Sair
-            </button>
-        </div>
-    </aside>
-
-    <main class="flex-1 p-10 overflow-y-auto">
-        <header class="flex justify-between items-center mb-8">
-            <h2 class="text-5xl font-semibold text-[#d8bfa4]">Estoque</h2>
-            <button id="add-item-button" class="flex items-center bg-gold text-[#1a1a2e] px-8 py-4 rounded-lg font-bold shadow-lg text-lg hover:bg-[#ffd700] transition duration-200 transform hover:scale-105">
-                <span class="material-icons mr-3 text-2xl">add_circle</span>
-                Adicionar Item
-            </button>
-        </header>
-
-        <div class="bg-[#2a2338] p-8 rounded-xl shadow-2xl">
-            <h3 class="text-3xl font-medium text-[#d8bfa4] mb-6">Itens Atuais</h3>
-            
-            <div id="loading-spinner" class="text-center py-12">
-                <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-gold mx-auto"></div>
-                <p class="mt-4 text-[#d8bfa4] text-lg">Carregando dados do Estoque...</p>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#453b44] hidden stock-table" id="stock-table">
-                    <thead class="bg-[#453b44]">
-                        <tr>
-                            <th class="px-6 py-3 text-left font-medium text-[#0f0c19] uppercase tracking-wider rounded-tl-lg">Item</th>
-                            <th class="px-6 py-3 text-left font-medium text-[#0f0c19] uppercase tracking-wider">Quantidade</th>
-                            <th class="px-6 py-3 text-left font-medium text-[#0f0c19] uppercase tracking-wider">Preço (R$)</th>
-                            <th class="px-6 py-3 text-left font-medium text-[#0f0c19] uppercase tracking-wider">Última Atualização</th>
-                            <th class="px-6 py-3 text-right font-medium text-[#0f0c19] uppercase tracking-wider rounded-tr-lg">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-[#453b44]" id="stock-table-body"></tbody>
-                </table>
-            </div>
-            
-            <p id="no-items-message" class="text-center py-12 text-[#d8bfa4] text-lg hidden">Nenhum item em estoque. Clique em "Adicionar Item" para começar.</p>
-        </div>
-    </main>
-    
-    <div id="item-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center hidden">
-        <div class="bg-[#1a1a2e] p-10 rounded-xl w-full max-w-2xl shadow-2xl border border-[#453b44]">
-            <h3 class="text-3xl font-semibold text-[#d8bfa4] mb-8" id="modal-title">Adicionar Novo Item</h3>
-            <form id="item-form" class="space-y-6">
-                <div>
-                    <label class="block text-lg font-medium text-[#6a5c7a] mb-2">Nome do Item</label>
-                    <input type="text" id="item-name" required 
-                           class="mt-1 block w-full rounded-lg bg-[#0f0c19] border border-gray-600 text-[#d8bfa4] p-4 focus:ring-gold focus:border-gold text-lg">
-                </div>
-                <div class="flex space-x-6">
-                    <div class="flex-1">
-                        <label class="block text-lg font-medium text-[#6a5c7a] mb-2">Quantidade</label>
-                        <input type="number" id="item-quantity" required min="0" 
-                               class="mt-1 block w-full rounded-lg bg-[#0f0c19] border border-gray-600 text-[#d8bfa4] p-4 focus:ring-gold focus:border-gold text-lg">
-                    </div>
-                    <div class="flex-1">
-                        <label class="block text-lg font-medium text-[#6a5c7a] mb-2">Preço (R$)</label>
-                        <input type="number" step="0.01" id="item-price" required min="0" 
-                               class="mt-1 block w-full rounded-lg bg-[#0f0c19] border border-gray-600 text-[#d8bfa4] p-4 focus:ring-gold focus:border-gold text-lg">
-                    </div>
-                </div>
-                <input type="hidden" id="item-id">
-                <div class="flex justify-end pt-6 space-x-4">
-                    <button type="button" id="cancel-button" 
-                            class="px-6 py-3 rounded-lg text-[#d8bfa4] border border-[#453b44] hover:bg-[#453b44] transition text-lg">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="px-8 py-3 rounded-lg bg-gold text-[#1a1a2e] font-bold hover:bg-[#ffd700] transition text-lg shadow-md" id="save-button">
-                        Salvar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
         const stockTableBody = document.getElementById('stock-table-body');
         const loadingSpinner = document.getElementById('loading-spinner');
         const stockTable = document.getElementById('stock-table');
@@ -156,6 +12,12 @@
         const modalTitle = document.getElementById('modal-title');
         const saveButton = document.getElementById('save-button');
         const cancelButton = document.getElementById('cancel-button');
+        const cancel_categoria = document.getElementById('cancela_categoria');
+        
+        const categoriaNomeInput = document.getElementById('categoria-nome');
+        const categoriaButton = document.getElementById('adi_categoria');
+        const categoriaForm = document.getElementById('categoria-form');
+        const categoriaModal = document.getElementById('categoria_modal');
         
         const itemNameInput = document.getElementById('item-name');
         const itemQuantityInput = document.getElementById('item-quantity');
@@ -255,8 +117,8 @@
                     throw new Error();
                 }
                 
-                const items = await response.json();
-                renderStockTable(items);
+                const responseData = await response.json();
+                renderStockTable(responseData.data || []);
             } catch (e) {
                 loadingSpinner.innerHTML = `<p class="text-red-500 mt-4 text-lg">Erro ao carregar o estoque. Verifique se o servidor Flask está a correr e se o DB está acessível na porta 5000.</p>`;
             }
@@ -326,7 +188,17 @@
             itemForm.reset();
         };
 
+        const hideModal1 = () => {
+            categoriaModal.classList.add('hidden');
+            itemForm.reset();
+        };
+
+
+
         addItemButton.addEventListener('click', () => showModal('Adicionar Novo Item'));
+        categoriaButton.addEventListener('click', () => {
+        categoriaModal.classList.remove('hidden');
+        });
 
         cancelButton.addEventListener('click', hideModal);
         itemModal.addEventListener('click', (e) => {
@@ -334,25 +206,44 @@
                 hideModal();
             }
         });
-        
-        itemForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const priceValue = parseFloat(itemPriceInput.value); 
 
-            if (isNaN(priceValue) || priceValue < 0) {
-                alert("Por favor, insira um preço válido.");
-                return;
+        cancel_categoria.addEventListener('click', hideModal1);
+        categoriaModal.addEventListener('click', (e) => {
+            if (e.target.id === 'categoria_modal') {
+                hideModal1();
             }
+        });
+        
 
-            const data = {
-                id: itemIdInput.value || undefined,
-                name: itemNameInput.value.trim(),
-                quantity: parseInt(itemQuantityInput.value, 10),
-                price: priceValue,
+        categoriaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const dados = {
+                categoria: categoriaNomeInput.value.trim()
             };
-            
-            await saveItem(data);
-            hideModal();
+
+            try {
+                const response = await fetch('/api/categorias', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+
+                const resultado = await response.json();
+
+                if (!response.ok) {
+                    alert(resultado.message);
+                    return;
+                }
+
+                alert(resultado.message);
+
+                categoriaForm.reset();
+                categoriaModal.classList.add('hidden');
+
+            } catch {
+                alert('Erro de conexão');
+            }
         });
 
         const handleEditItem = (e) => {
@@ -394,6 +285,5 @@
             getUserIdFromSession();
             fetchStock();
         });
-    </script>
-</body>
-</html>
+        });
+

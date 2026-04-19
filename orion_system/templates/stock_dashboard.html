@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Estoque - Orion System</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <script src="{{ url_for('static', filename='js/estoque.js') }}"></script>
+</head>
+
+<body class="dashboard-body">
+
+    <aside id="sidebar" class="sidebar">
+        <div>
+            <h1 class="logo-title">Orion</h1>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <span class="material-icons">inventory_2</span>
+                    Estoque
+                </a>
+
+                <a href="#" class="nav-item">
+                    <span class="material-icons">bar_chart</span>
+                    Relatórios
+                </a>
+
+                <a href="#" class="nav-item">
+                    <span class="material-icons">people</span>
+                    Usuários
+                </a>
+            </nav>
+        </div>
+
+        <div>
+            <div id="user-info" class="user-info">
+                ID da Sessão:
+                <span id="user-id">A carregar...</span>
+            </div>
+
+            <button id="logout-button" class="logout-button">
+                <span class="material-icons">logout</span>
+                Sair
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="main-header">
+            <h2 class="titulo_pagina">Estoque</h2>
+
+            <button id="add-item-button" class="add-button">
+                <span class="material-icons">add_circle</span>
+                Adicionar Item
+            </button>
+            <button id="adi_categoria" class="add-button">
+                <span class="material-icons">add_circle</span>
+                Nova categoria 
+            </button>
+        </header>
+
+        <div class="card">
+            <h3 class="section-title">Itens Atuais</h3>
+
+            <div id="loading-spinner" class="loading">
+                <div class="spinner"></div>
+                <p>Carregando dados do Estoque...</p>
+            </div>
+
+            <div class="table-container">
+                <table class="stock-table hidden" id="stock-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantidade</th>
+                            <th>Preço (R$)</th>
+                            <th>Última Atualização</th>
+                            <th class="text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-table-body"></tbody>
+                </table>
+            </div>
+
+            <p id="no-items-message" class="no-items hidden">
+                Nenhum item em estoque. Clique em "Adicionar Item" para começar.
+            </p>
+        </div>
+    </main>
+
+    <div id="item-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modal-title">Adicionar Novo Item</h3>
+
+            <form id="item-form">
+
+                <div>
+                    <label>Nome do Item</label>
+                    <input type="text" id="item-name" required>
+                </div>
+
+                <div>
+                    <label>Categoria do item</label>
+                    <input type="text" id="nome_categoria" required>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label>Quantidade</label>
+                        <input type="number" id="item-quantity" required min="0">
+                    </div>
+
+                    <div>
+                        <label>Preço (R$)</label>
+                        <input type="number" step="0.01" id="item-price" required min="0">
+                    </div>
+                </div>
+
+                <input type="hidden" id="item-id">
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-button" class="cancel-button">
+                        Cancelar
+                    </button>
+
+                    <button type="submit" id="save-button" class="save-button">
+                        Salvar
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <div id="categoria_modal" class="modal hidden">
+    <div class="modal-content">
+        
+        <form id="categoria-form">
+
+            <div>
+                <label>Nome da Categoria</label>
+                <input type="text" id="categoria-nome" required>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="cancela_categoria" class="cancel-button">
+                    Cancelar
+                </button>
+
+                <button type="submit" class="save-button">
+                    Salvar
+                </button>
+            </div>
+
+        </form>
+
+        </div>
+    </div>
+
+</body>
+</html>
