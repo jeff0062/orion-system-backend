@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from werkzeug.security import generate_password_hash
 from modelos import db, Usuario
 from datetime import datetime
-from .auth import login_required
+from .auth import login_required, get_usuario_logado
  
 usuarios_bp = Blueprint('usuarios',__name__)
 
@@ -133,9 +133,7 @@ def atualizar_usuario():
 @usuarios_bp.route('/api/usuarios/me', methods=['GET'])
 @login_required
 def usuario_me():
-    id_usuario = session.get('id_usuario')
-
-    usuario = Usuario.query.get(id_usuario)
+    usuario = get_usuario_logado() 
 
     if not usuario:
         return jsonify({

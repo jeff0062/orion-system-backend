@@ -13,7 +13,7 @@ mypy_extensions==1.1.0
 packaging==25.0
 pathspec==0.12.1
 platformdirs==4.5.0
-PyMySQL==1.1.2
+psycopg2-binary==2.9.10
 pytokens==0.3.0
 SQLAlchemy==2.0.44
 typing_extensions==4.15.0

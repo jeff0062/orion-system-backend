@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_cors import CORS
 
@@ -10,14 +11,17 @@ from routes.auth import auth_bp
 
 app = Flask (__name__)
 
-app.secret_key = 'hebert'
+app.secret_key = os.getenv('SECRET_KEY', 'hebert')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False  
 
 CORS(app, supports_credentials=True)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@127.0.0.1:3306/orion'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL', 
+    'postgresql+psycopg2://postgres:postgres@localhost:5432/orion'
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False
 
 db.init_app(app)
