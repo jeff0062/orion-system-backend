@@ -20,7 +20,7 @@ CORS(app, supports_credentials=True)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL', 
-    'postgresql+psycopg2://postgres:postgres@localhost:5432/orion'
+    'postgresql+psycopg2://postgres:Orion2026Postgres@127.0.0.1:5432/orion'
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False
 
