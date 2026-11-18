@@ -19,20 +19,71 @@
 </div>
 
     <div class="caixa-login">
-        <label>Servidor</label>
-        <input type="text" placeholder="Digite o servidor">
+        <label for="login-email">E-mail</label>
+        <input type="email" id="login-email" placeholder="Digite seu e-mail" autocomplete="username">
 
-        <label>Senha</label>
-        <input type="password" placeholder="Digite a senha">
-        
-<button onclick="window.location.href='{{ url_for('index.dashboard') }}'">
-    OK
-</button>
-<p>
-    <label>Não é cadastrado? </label> 
-    <label>Clique aqui</label>
-</p>
-    </div>\
+        <label for="login-senha">Senha</label>
+        <input type="password" id="login-senha" placeholder="Digite a senha" autocomplete="current-password">
 
-<footer class= rodape><h3>Juniorkd62@gmail.com</h3></footer>
+        <p id="login-msg" role="alert" style="color:#ff6b6b; margin:8px 0; min-height:1.2em;"></p>
+
+        <button type="button" id="login-btn">OK</button>
+    </div>
+
+<footer class="rodape"><h3>Juniorkd62@gmail.com</h3></footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const emailInput = document.getElementById('login-email');
+    const senhaInput = document.getElementById('login-senha');
+    const msg = document.getElementById('login-msg');
+    const btn = document.getElementById('login-btn');
+
+    const API_LOGIN_URL = '/api/login';
+    const DASHBOARD_URL = "{{ url_for('index.dashboard') }}";
+
+    async function entrar() {
+        msg.textContent = '';
+
+        const email = emailInput.value.trim();
+        const senha = senhaInput.value;
+
+        if (!email || !senha) {
+            msg.textContent = 'Preencha o e-mail e a senha.';
+            return;
+        }
+
+        btn.disabled = true;
+        try {
+            const response = await fetch(API_LOGIN_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ email, senha })
+            });
+
+            let resultado = null;
+            try { resultado = await response.json(); } catch (_) {}
+
+            if (response.ok && resultado && resultado.success) {
+                window.location.href = DASHBOARD_URL;
+                return;
+            }
+
+            msg.textContent = (resultado && resultado.message) ||
+                `Erro ${response.status} ao entrar. Veja o terminal do Flask.`;
+        } catch (_) {
+            msg.textContent = 'Não foi possível conectar ao servidor.';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    btn.addEventListener('click', entrar);
+    [emailInput, senhaInput].forEach((campo) =>
+        campo.addEventListener('keydown', (e) => { if (e.key === 'Enter') entrar(); })
+    );
+});
+</script>
+</body>
 </html>
