@@ -1,5 +1,6 @@
+from datetime import datetime
 from flask import Blueprint, jsonify, request
-from modelos import db, EstoqueUsuario, Produtos, CategoriaProduto
+from modelos import db, EstoqueUsuario, Produtos, CategoriaProduto, Movimentacao
 from .auth import login_required, get_usuario_logado
 
 estoque_bp = Blueprint('estoque', __name__)
@@ -8,25 +9,39 @@ estoque_bp = Blueprint('estoque', __name__)
 @login_required
 def listar_estoque():
     usuario = get_usuario_logado()
-    itens = EstoqueUsuario.query.filter_by(id_usuario=usuario.id_usuario).all()
+    itens = EstoqueUsuario.query.filter_by(fk_id_usuario=usuario.id_usuario).all()
     resultado = []
 
     for item in itens:
         produto = item.produto
 
+        # Buscar última movimentação para obter a data de atualização
+        ultima_mov = (
+            Movimentacao.query.filter_by(
+                fk_id_usuario=usuario.id_usuario,
+                fk_id_produto=produto.id_produto
+            )
+            .order_by(Movimentacao.data_e_hora.desc())
+            .first()
+        )
+        data_atualizacao = (
+            ultima_mov.data_e_hora.strftime('%Y-%m-%d %H:%M:%S')
+            if ultima_mov and ultima_mov.data_e_hora
+            else None
+        )
+
         resultado.append({
             'id_estoque': item.id_estoque,
             'nome': produto.nome,
-            'categoria': produto.categoria.categoria if produto.categoria else None,
+            'categoria': produto.categoria_produto.categoria if produto.categoria_produto else None,
             'quantidade': item.quantidade,
             'preco': float(produto.preco),
-            'data_atualizacao': produto.data_hora.strftime('%Y-%m-%d %H:%M:%S')
-            if produto.data_hora else None
+            'data_atualizacao': data_atualizacao
         })
 
     return jsonify({
         'success': True,
-        'message':'Estoque listado com sucesso',
+        'message': 'Estoque listado com sucesso',
         'data': resultado
     }), 200
 
@@ -37,7 +52,7 @@ def delete_item(id_estoque):
 
     item = EstoqueUsuario.query.filter_by(
         id_estoque=id_estoque,
-        id_usuario=usuario.id_usuario
+        fk_id_usuario=usuario.id_usuario
     ).first()
 
     if not item:
@@ -51,17 +66,17 @@ def delete_item(id_estoque):
         db.session.delete(item)
         db.session.commit()
         return jsonify({
-            'success':True,
-            'message':'Item removido com sucesso',
-            'data':None
+            'success': True,
+            'message': 'Item removido com sucesso',
+            'data': None
         }), 200
 
     except Exception:
         db.session.rollback()
         return jsonify({
-            'success':False,
-            'message':'Erro ao remover item',
-            'data':None
+            'success': False,
+            'message': 'Erro ao remover item',
+            'data': None
         }), 500
 
 @estoque_bp.route('/api/estoque', methods=['POST'])
@@ -72,24 +87,25 @@ def adicionar_item_estoque():
 
     if not dados:
         return jsonify({
-            'success':False,
-            'message':'Dados da requisição não enviados',
-            'data':None
+            'success': False,
+            'message': 'Dados da requisição não enviados',
+            'data': None
         }), 400
 
     campos_obrigatorios = ['nome', 'preco', 'quantidade', 'id_categoria']
     for campo in campos_obrigatorios:
         if campo not in dados or dados[campo] in [None, '']:
             return jsonify({
-                'success':False,
+                'success': False,
                 'message': f'Campo "{campo}" é obrigatório',
-                'data':None
+                'data': None
             }), 400       
     
-    if not dados['nome'].strip():
+    nome_produto = str(dados['nome']).strip()
+    if not nome_produto:
         return jsonify({
-            'success':False,
-            'message':'Nome do produto inválido',
+            'success': False,
+            'message': 'Nome do produto inválido',
             'data': None
         }), 400
 
@@ -98,16 +114,16 @@ def adicionar_item_estoque():
         quantidade = int(dados['quantidade'])
     except (ValueError, TypeError):
         return jsonify({
-            'success':False,
-            'message':'Preço ou quantidade inválidos',
+            'success': False,
+            'message': 'Preço ou quantidade inválidos',
             'data': None
         }), 400
 
     if preco < 0 or quantidade < 0:
         return jsonify({
-            'success':False,
-            'message':'Preço ou quantidade inválidos',
-            'data':None
+            'success': False,
+            'message': 'Preço ou quantidade inválidos',
+            'data': None
         }), 400
 
     try:
@@ -115,26 +131,26 @@ def adicionar_item_estoque():
     except (ValueError, TypeError):
         return jsonify({
             'success': False,
-            'message':'Categoria inválida',
-            'data':None
+            'message': 'Categoria inválida',
+            'data': None
         }), 400
 
     categoria = CategoriaProduto.query.filter_by(
         id_categoria=id_categoria,
-        id_usuario=usuario.id_usuario
+        fk_id_usuario=usuario.id_usuario
     ).first()
     
     if not categoria:
         return jsonify({
-            'success':False,    
-            'message':'Categoria não encontrada',
-            'data':None
+            'success': False,    
+            'message': 'Categoria não encontrada',
+            'data': None
         }), 404
 
     produto = Produtos.query.filter_by(
-        nome=dados['nome'].strip(),
-        id_categoria=dados['id_categoria'],
-        id_usuario=usuario.id_usuario
+        nome=nome_produto,
+        fk_categoria_produto=id_categoria,
+        fk_id_usuario=usuario.id_usuario
     ).first()
     
     if produto:
@@ -145,34 +161,45 @@ def adicionar_item_estoque():
         }), 409
 
     produto = Produtos(
-        nome=dados['nome'],
+        nome=nome_produto,
         preco=preco,
-        id_categoria=dados['id_categoria'],
-        id_usuario=usuario.id_usuario
+        fk_categoria_produto=id_categoria,
+        fk_id_usuario=usuario.id_usuario
     )
     db.session.add(produto)
     db.session.flush()
 
     estoque = EstoqueUsuario.query.filter_by(
-        id_usuario=usuario.id_usuario,
-        id_produto=produto.id_produto
+        fk_id_usuario=usuario.id_usuario,
+        fk_id_produto=produto.id_produto
     ).first()
 
     if estoque:
         estoque.quantidade += quantidade
     else:
         estoque = EstoqueUsuario(
-            id_usuario=usuario.id_usuario,
-            id_produto=produto.id_produto,
+            fk_id_usuario=usuario.id_usuario,
+            fk_id_produto=produto.id_produto,
             quantidade=quantidade
         )
-    db.session.add(estoque)
+        db.session.add(estoque)
+
+    # Registrar movimentação inicial
+    if quantidade > 0:
+        movimentacao = Movimentacao(
+            quantidade=quantidade,
+            data_e_hora=datetime.now(),
+            fk_id_usuario=usuario.id_usuario,
+            fk_id_produto=produto.id_produto
+        )
+        db.session.add(movimentacao)
+
     db.session.commit()
 
     return jsonify({
-        'success':True,
+        'success': True,
         'message': 'Produto adicionado ao estoque',
-        'data':{
+        'data': {
             'produto': {
                 'nome': produto.nome,
                 'categoria': categoria.categoria,
@@ -190,21 +217,21 @@ def atualizar_item_estoque(id_estoque):
     
     if not dados:
         return jsonify({
-            'success':False,    
-            'message':'Dados da requisição não enviados',
+            'success': False,    
+            'message': 'Dados da requisição não enviados',
             'data': None
         }), 400
 
     estoque = EstoqueUsuario.query.filter_by(
         id_estoque=id_estoque,
-        id_usuario=usuario.id_usuario
+        fk_id_usuario=usuario.id_usuario
     ).first()
 
     if not estoque:
         return jsonify({
-            'success':False,    
-            'message':'Item de estoque não encontrado',
-            'data':None
+            'success': False,    
+            'message': 'Item de estoque não encontrado',
+            'data': None
         }), 404
 
     produto = estoque.produto
@@ -214,27 +241,36 @@ def atualizar_item_estoque(id_estoque):
             quantidade = int(dados['quantidade'])
         except (ValueError, TypeError):
             return jsonify({
-                'success':False,    
-                'message':'Quantidade inválida',
-                'data':None
+                'success': False,    
+                'message': 'Quantidade inválida',
+                'data': None
             }), 400
 
         if quantidade < 0:
             return jsonify({
                 'success': False,
-                'message':'Quantidade inválida',
+                'message': 'Quantidade inválida',
                 'data': None
             }), 400
 
+        diferenca = quantidade - estoque.quantidade
         estoque.quantidade = quantidade
 
+        if diferenca != 0:
+            movimentacao = Movimentacao(
+                quantidade=diferenca,
+                data_e_hora=datetime.now(),
+                fk_id_usuario=usuario.id_usuario,
+                fk_id_produto=produto.id_produto
+            )
+            db.session.add(movimentacao)
 
     if 'nome' in dados:
         if not isinstance(dados['nome'], str) or not dados['nome'].strip():
             return jsonify({
-                'success':False,
-                'message':'Nome inválido',
-                'data':None
+                'success': False,
+                'message': 'Nome inválido',
+                'data': None
             }), 400
 
         produto.nome = dados['nome'].strip()
@@ -244,16 +280,16 @@ def atualizar_item_estoque(id_estoque):
             preco = float(dados['preco'])
         except (ValueError, TypeError):
             return jsonify({
-                'success':False,
-                'message':'Preço inválido',
-                'data':None
+                'success': False,
+                'message': 'Preço inválido',
+                'data': None
             }), 400
                 
         if preco < 0:
             return jsonify({
-                'success':False,
-                'message':'Preço inválido',
-                'data':None
+                'success': False,
+                'message': 'Preço inválido',
+                'data': None
             }), 400
 
         produto.preco = preco
@@ -263,35 +299,35 @@ def atualizar_item_estoque(id_estoque):
             id_categoria = int(dados['id_categoria'])
         except (ValueError, TypeError):
             return jsonify({
-                'success':False,
-                'message':'Categoria inválida',
-                'data':None
+                'success': False,
+                'message': 'Categoria inválida',
+                'data': None
             }), 400
 
         categoria = CategoriaProduto.query.filter_by(
             id_categoria=id_categoria,
-            id_usuario=usuario.id_usuario
+            fk_id_usuario=usuario.id_usuario
         ).first()   
 
         if not categoria:
             return jsonify({
-                'success':False,
-                'message':'Categoria não encontrada',
-                'data':None
+                'success': False,
+                'message': 'Categoria não encontrada',
+                'data': None
             }), 404
 
-        produto.id_categoria = id_categoria
+        produto.fk_categoria_produto = id_categoria
 
     db.session.commit()
 
     return jsonify({
         'success': True,
         'message': 'Item atualizado com sucesso',
-        'data':{
+        'data': {
             'produto': {
                 'nome': produto.nome,
                 'preco': float(produto.preco),
-                'categoria': produto.categoria.categoria if produto.categoria else None,
+                'categoria': produto.categoria_produto.categoria if produto.categoria_produto else None,
                 'quantidade': estoque.quantidade
             }   
         }

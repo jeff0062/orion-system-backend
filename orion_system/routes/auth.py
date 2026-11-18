@@ -37,22 +37,19 @@ def login():
             "data": None
         }), 400
 
-    identificador = dados.get('identificador')
+    email = dados.get('email')
     senha = dados.get('senha')
 
-    if not identificador or not senha:
+    if not email or not senha:
         return jsonify({
             'success': False,
             'message': 'Necessário preencher todos os campos',
             'data': None
         }), 400
 
-    usuario = Usuario.query.filter(
-        or_(
-            Usuario.email == identificador,
-            Usuario.telefone == identificador
-        )
-    ).first()
+    email = str(email).strip()
+
+    usuario = Usuario.query.filter_by(email=email).first()
 
     if not usuario or not check_password_hash(usuario.senha, senha):
         return jsonify({
